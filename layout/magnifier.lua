@@ -1,17 +1,16 @@
 ---------------------------------------------------------------------------
---- Magnifier layout
+--- Magnifier layout module for awful
 --
--- @author Madhur Ahuja &lt;ahuja.madhur@gmail.com&gt;
--- @copyright 2023 Madhur Ahuja
--- @module madhur.layout
+-- @author Julien Danjou &lt;julien@danjou.info&gt;
+-- @copyright 2008 Julien Danjou
+-- @module awful.layout
 ---------------------------------------------------------------------------
 
 -- Grab environment we need
-local awful = require("awful")
-local naughty = require("naughty")
 local ipairs = ipairs
 local math = math
-local capi = {
+local capi =
+{
     client = client,
     screen = screen,
     mouse = mouse,
@@ -26,37 +25,33 @@ local capi = {
 local magnifier = {}
 
 function magnifier.mouse_resize_handler(c, corner, x, y)
-    capi.mouse.coords({x = x, y = y})
+    capi.mouse.coords({ x = x, y = y })
 
     local wa = c.screen.workarea
     local center_x = wa.x + wa.width / 2
     local center_y = wa.y + wa.height / 2
-    local maxdist_pow = (wa.width ^ 2 + wa.height ^ 2) / 4
+    local maxdist_pow = (wa.width^2 + wa.height^2) / 4
 
     local prev_coords = {}
-    capi.mousegrabber.run(
-        function(position)
-            if not c.valid then
-                return false
-            end
+    capi.mousegrabber.run(function (position)
+                              if not c.valid then return false end
 
-            for _, v in ipairs(position.buttons) do
-                if v then
-                    prev_coords = {x = position.x, y = position.y}
-                    local dx = center_x - position.x
-                    local dy = center_y - position.y
-                    local dist = dx ^ 2 + dy ^ 2
+                              for _, v in ipairs(position.buttons) do
+                                  if v then
+                                      prev_coords = { x =position.x, y = position.y }
+                                      local dx = center_x - position.x
+                                      local dy = center_y - position.y
+                                      local dist = dx^2 + dy^2
 
-                    -- New master width factor
-                    local mwfact = dist / maxdist_pow
-                    c.screen.selected_tag.master_width_factor = math.min(math.max(0.01, mwfact), 0.99)
-                    return true
-                end
-            end
-            return prev_coords.x == position.x and prev_coords.y == position.y
-        end,
-        corner .. "_corner"
-    )
+                                      -- New master width factor
+                                      local mwfact = dist / maxdist_pow
+                                      c.screen.selected_tag.master_width_factor
+                                        = math.min(math.max(0.01, mwfact), 0.99)
+                                      return true
+                                  end
+                              end
+                              return prev_coords.x == position.x and prev_coords.y == position.y
+                          end, corner .. "_corner")
 end
 
 local function get_screen(s)
@@ -67,27 +62,29 @@ function magnifier.arrange(p)
     -- Fullscreen?
     local area = p.workarea
     local cls = p.clients
+    local focus = p.focus or capi.client.focus
     local t = p.tag or capi.screen[p.screen].selected_tag
     local mwfact = t.master_width_factor
+    local fidx
 
-    if #cls == 0 then
-        return
+    -- Check that the focused window is on the right screen
+    if focus and focus.screen ~= get_screen(p.screen) then focus = nil end
+
+    -- If no window is focused or focused window is not tiled, take the first tiled one.
+    if not focus or focus.floating then
+        focus = cls[1]
+        fidx = 1
     end
-    -- We take master as the magnified client, instead of focussed one.
-    local master = awful.client.getmaster(awful.screen.focused())
 
-    if not master then
-        return
-    end
-
-    master:raise()
+    -- Abort if no clients are present
+    if not focus then return end
 
     local geometry = {}
     if #cls > 1 then
         geometry.width = area.width * math.sqrt(mwfact)
         geometry.height = area.height * math.sqrt(mwfact)
         geometry.x = area.x + (area.width - geometry.width) / 2
-        geometry.y = area.y + (area.height - geometry.height) / 2
+        geometry.y = area.y + (area.height - geometry.height) /2
     else
         geometry.x = area.x
         geometry.y = area.y
@@ -101,7 +98,7 @@ function magnifier.arrange(p)
         width = geometry.width,
         height = geometry.height
     }
-    p.geometries[master] = g
+    p.geometries[focus] = g
 
     if #cls > 1 then
         geometry.x = area.x
@@ -109,7 +106,30 @@ function magnifier.arrange(p)
         geometry.height = area.height / (#cls - 1)
         geometry.width = area.width
 
-        for k = 2, #cls do
+        -- We don't know the focus window index. Try to find it.
+        if not fidx then
+            for k, c in ipairs(cls) do
+                if c == focus then
+                    fidx = k
+                    break
+                end
+            end
+        end
+
+        -- First move clients that are before focused client.
+        for k = fidx + 1, #cls do
+            p.geometries[cls[k]] = {
+                x = geometry.x,
+                y = geometry.y,
+                width = geometry.width,
+                height = geometry.height
+            }
+            geometry.y = geometry.y + geometry.height
+        end
+
+        -- Then move clients that are after focused client.
+        -- So the next focused window will be the one at the top of the screen.
+        for k = 1, fidx - 1 do
             p.geometries[cls[k]] = {
                 x = geometry.x,
                 y = geometry.y,
@@ -126,6 +146,10 @@ end
 -- @usebeautiful beautiful.layout_magnifier
 
 magnifier.name = "magnifier"
+
+-- This layout handles the currently focused client specially and needs to be
+-- called again when the focus changes.
+magnifier.need_focus_update = true
 
 return magnifier
 

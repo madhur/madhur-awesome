@@ -12,6 +12,7 @@
 local tag = require("awful.tag")
 local awful = require("awful")
 local naughty = require("naughty")
+local helpers = require("madhur.helpers")
 local ipairs = ipairs
 local math = math
 local capi =
@@ -205,42 +206,12 @@ local function do_tile(param, orientation)
         place_master = not place_master
     end
     
-    if awful.util.magnifier then
-        magnify(cls, gs, wa)
-    end
+    
+    helpers.magnify(cls, gs, wa)
+    
     --naughty.notify({text="arranged"})
 end
 
-function magnify(cls, gs, wa)
-
-    local focus = capi.client.focus
-    for c = 1,#cls do
-        if focus == cls[c] then
-            local geom = gs[cls[c]]
-            local height = geom["height"]
-            local width = geom["width"]
-            local x = geom["x"]
-            local y = geom["y"]
-            local newWidth = width*1.3
-            local newHeight = height*1.3
-            local deltaHeight = newHeight - height
-            local deltaWidth = newWidth - width
-            if newWidth < wa["width"] then
-                geom["width"] = newWidth
-            end
-            if newHeight < wa["height"] then
-                geom["height"] = newHeight
-            end
-            if x > deltaWidth then
-                geom["x"] = x - deltaWidth
-            end
-            if y > deltaHeight then
-                geom["y"] = y - deltaHeight
-            end
-            return
-        end
-    end
-end
 
 function tile.skip_gap(nclients, t)
     return nclients == 1 and t.master_fill_policy == "expand"
@@ -251,7 +222,7 @@ end
 -- @clientlayout awful.layout.suit.tile.right
 -- @usebeautiful beautiful.layout_tile
 tile.right = {}
-tile.right.name = "tilemagnified"
+tile.right.name = "tall"
 tile.right.arrange = do_tile
 tile.right.skip_gap = tile.skip_gap
 function tile.right.mouse_resize_handler(c, corner, x, y)
@@ -263,7 +234,7 @@ end
 -- @clientlayout awful.layout.suit.tile.left
 -- @usebeautiful beautiful.layout_tileleft
 tile.left = {}
-tile.left.name = "tileleftmagnified"
+tile.left.name = "tallleft"
 tile.left.skip_gap = tile.skip_gap
 function tile.left.arrange(p)
     return do_tile(p, "left")
@@ -277,7 +248,7 @@ end
 -- @clientlayout awful.layout.suit.tile.bottom
 -- @usebeautiful beautiful.layout_tilebottom
 tile.bottom = {}
-tile.bottom.name = "tilebottommagnified"
+tile.bottom.name = "tallbottom"
 tile.bottom.skip_gap = tile.skip_gap
 function tile.bottom.arrange(p)
     return do_tile(p, "bottom")
@@ -291,7 +262,7 @@ end
 -- @clientlayout awful.layout.suit.tile.top
 -- @usebeautiful beautiful.layout_tiletop
 tile.top = {}
-tile.top.name = "tiletopmagnified"
+tile.top.name = "talltop"
 tile.top.skip_gap = tile.skip_gap
 function tile.top.arrange(p)
     return do_tile(p, "top")
@@ -304,18 +275,7 @@ tile.arrange = tile.right.arrange
 tile.mouse_resize_handler = tile.right.mouse_resize_handler
 tile.name = tile.right.name
 
-function dump(o)
-    if type(o) == 'table' then
-       local s = '{ '
-       for k,v in pairs(o) do
-          if type(k) ~= 'number' then k = '"'..k..'"' end
-          s = s .. '['..k..'] = ' .. dump(v) .. ','
-       end
-       return s .. '} '
-    else
-       return tostring(o)
-    end
-end
+
  
 
 return tile

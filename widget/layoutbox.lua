@@ -10,6 +10,7 @@ local capi = { screen = screen, tag = tag }
 local layout = require("awful.layout")
 local beautiful = require("beautiful")
 local wibox = require("wibox")
+local awful = require("awful")
 
 local function get_screen(s)
     return s and capi.screen[s]
@@ -22,8 +23,11 @@ local boxes = nil
 local function update(w, screen)
     screen = get_screen(screen)
     local name = layout.getname(layout.get(screen))
-
-    w.textbox.text   = name
+    local magnified = ""
+    if awful.util.magnifier then
+        magnified = "  "
+    end
+    w.textbox.text   = name..magnified
 end
 
 local function update_from_tag(t)
