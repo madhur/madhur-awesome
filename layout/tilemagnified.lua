@@ -10,12 +10,13 @@
 
 -- Grab environment we need
 local tag = require("awful.tag")
-local client = require("awful.client")
+local awful = require("awful")
 local naughty = require("naughty")
 local ipairs = ipairs
 local math = math
 local capi =
 {
+    client = client,
     mouse = mouse,
     screen = screen,
     mousegrabber = mousegrabber
@@ -58,7 +59,7 @@ local function apply_size_hints(c, width, height, useless_gap)
     return width + 2 * bw + useless_gap, height + 2 * bw + useless_gap
 end
 
-local function tile_group(gs, cls, wa, orientation, fact, group, useless_gap)
+local function tile_group(gs, cls, wa, orientation, fact, group, useless_gap, p)
     --naughty.notify({text=dump(group)})
     -- get our orientation right
     local height = "height"
@@ -103,10 +104,15 @@ local function tile_group(gs, cls, wa, orientation, fact, group, useless_gap)
         local geom = {}
         local hints = {}
         local i = c - group.first +1
+
+        local focus = capi.client.focus
+        --naughty.notify({text=dump(focus)})
+
         geom[width] = size
         geom[height] = math.max(1, math.floor(unused * fact[i] / total_fact))
         geom[x] = group.coord
         geom[y] = coord
+
         gs[cls[c]] = geom
         hints.width, hints.height = apply_size_hints(cls[c], geom.width, geom.height, useless_gap)
         coord = coord + hints[height]
@@ -119,6 +125,7 @@ local function tile_group(gs, cls, wa, orientation, fact, group, useless_gap)
 end
 
 local function do_tile(param, orientation)
+    
     local t = param.tag or capi.screen[param.screen].selected_tag
     orientation = orientation or "right"
 
@@ -171,7 +178,7 @@ local function do_tile(param, orientation)
                 data[0] = {}
             end
             coord = coord + tile_group(gs, cls, wa, orientation, data[0],
-                                       {first=1, last=nmaster, coord = coord, size = size}, useless_gap)
+                                       {first=1, last=nmaster, coord = coord, size = size}, useless_gap, param)
         end
 
         if not place_master and nother > 0 then
@@ -192,12 +199,47 @@ local function do_tile(param, orientation)
                     data[i] = {}
                 end
                 coord = coord + tile_group(gs, cls, wa, orientation, data[i],
-                                           { first = first, last = last, coord = coord, size = size }, useless_gap)
+                                           { first = first, last = last, coord = coord, size = size }, useless_gap, param)
             end
         end
         place_master = not place_master
     end
+    
+    if awful.util.magnifier then
+        magnify(cls, gs, wa)
+    end
+    --naughty.notify({text="arranged"})
+end
 
+function magnify(cls, gs, wa)
+
+    local focus = capi.client.focus
+    for c = 1,#cls do
+        if focus == cls[c] then
+            local geom = gs[cls[c]]
+            local height = geom["height"]
+            local width = geom["width"]
+            local x = geom["x"]
+            local y = geom["y"]
+            local newWidth = width*1.3
+            local newHeight = height*1.3
+            local deltaHeight = newHeight - height
+            local deltaWidth = newWidth - width
+            if newWidth < wa["width"] then
+                geom["width"] = newWidth
+            end
+            if newHeight < wa["height"] then
+                geom["height"] = newHeight
+            end
+            if x > deltaWidth then
+                geom["x"] = x - deltaWidth
+            end
+            if y > deltaHeight then
+                geom["y"] = y - deltaHeight
+            end
+            return
+        end
+    end
 end
 
 function tile.skip_gap(nclients, t)

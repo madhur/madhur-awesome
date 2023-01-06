@@ -1,18 +1,15 @@
 ---------------------------------------------------------------------------
---- Layoutbox widget.
+--- Text only Layoutbox widget.
 --
--- @author Julien Danjou &lt;julien@danjou.info&gt;
--- @copyright 2009 Julien Danjou
--- @classmod awful.widget.layoutbox
+-- @author Madhur Ahuja &lt;ahuja.madhur@gmail.com&gt;
+-- @classmod madhur.widget
 ---------------------------------------------------------------------------
 
 local setmetatable = setmetatable
 local capi = { screen = screen, tag = tag }
 local layout = require("awful.layout")
-local tooltip = require("awful.tooltip")
 local beautiful = require("beautiful")
 local wibox = require("wibox")
-local surface = require("gears.surface")
 
 local function get_screen(s)
     return s and capi.screen[s]
@@ -25,7 +22,6 @@ local boxes = nil
 local function update(w, screen)
     screen = get_screen(screen)
     local name = layout.getname(layout.get(screen))
-    w._layoutbox_tooltip:set_text(name or "[no name]")
 
     w.textbox.text   = name
 end
@@ -38,10 +34,8 @@ local function update_from_tag(t)
     end
 end
 
---- Create a layoutbox widget. It draws a picture with the current layout
--- symbol of the current tag.
+--- Create a layoutbox widget. It displays the name of layout instead of image unlike the out of the box layoutbox widget
 -- @param screen The screen number that the layout will be represented for.
--- @return An imagebox widget configured as a layoutbox.
 function layoutbox.new(screen)
     screen = get_screen(screen or 1)
 
@@ -71,8 +65,6 @@ function layoutbox.new(screen)
             },
             layout = wibox.layout.fixed.horizontal
         }
-
-        w._layoutbox_tooltip = tooltip {objects = {w}, delay_show = 1}
 
         update(w, screen)
         boxes[screen] = w
