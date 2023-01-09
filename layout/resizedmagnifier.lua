@@ -1,37 +1,24 @@
----------------------------------------------------------------------------
---- Tiled layouts module for awful
---
--- @author Donald Ephraim Curtis &lt;dcurtis@cs.uiowa.edu&gt;
--- @author Julien Danjou &lt;julien@danjou.info&gt;
--- @copyright 2009 Donald Ephraim Curtis
--- @copyright 2008 Julien Danjou
--- @module awful.layout
----------------------------------------------------------------------------
 
 -- Grab environment we need
-local tag = require("awful.tag")
 local awful = require("awful")
 local helpers = require("madhur.helpers")
 
 local capi =
 {
-    client = client,
-    mouse = mouse,
-    screen = screen,
-    mousegrabber = mousegrabber
+    client = client
 }
 
 local resizedmagnifier = {}
 
-function resizedmagnifier.arrange(p) 
-    local gs = p.geometries
+function resizedmagnifier.arrange(p)
     local cls = p.clients
     local area = p.workarea
 
     if #cls == 0 then return end
 
-    if #cls > 2 then 
+    if #cls > 2 then
         helpers.debug("This layout does not support more than 2 clients")
+        return
     end
 
     if #cls == 1 then

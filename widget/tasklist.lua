@@ -314,11 +314,15 @@ local function tasklist_label(c, args, tb)
     end
 
     if not disable_task_name then
+        local short_name = c.name
+        if string.len(c.name) > 20 then
+            short_name = string.sub(c.name, 1 , 20).."..."
+        end
         if c.minimized then
-            name = name .. (gstring.xml_escape(c.icon_name) or gstring.xml_escape(c.name) or
+            name = name .. (gstring.xml_escape(c.icon_name) or gstring.xml_escape(short_name) or
                             gstring.xml_escape("<untitled>"))
         else
-            name = name .. (gstring.xml_escape(c.name) or gstring.xml_escape("<untitled>"))
+            name = name .. (gstring.xml_escape(short_name) or gstring.xml_escape("<untitled>"))
         end
     end
 
