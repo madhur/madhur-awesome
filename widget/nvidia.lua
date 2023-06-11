@@ -48,7 +48,7 @@ local function factory(args)
 
             if tonumber(gpu.temp) >= 90 then
                 awesome.emit_signal("critical", "gpu")
-            elseif tonumber(gpu.temp) >= 60 then
+            elseif tonumber(gpu.temp) >= 65 then
                awesome.emit_signal("warning", "gpu")            
             else
                 awesome.emit_signal("normal", "gpu")            

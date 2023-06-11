@@ -16,10 +16,10 @@ function resizedmagnifier.arrange(p)
 
     if #cls == 0 then return end
 
-    if #cls > 2 then
-        helpers.debug("This layout does not support more than 2 clients")
-        return
-    end
+    -- if #cls > 2 then
+    --     helpers.debug("This layout does not support more than 2 clients")
+    --     return
+    -- end
 
     if #cls == 1 then
         local g = {
@@ -38,10 +38,14 @@ function resizedmagnifier.arrange(p)
         local height = area["height"]
         local filled_space = 0
 
-        for c = 1,2 do
+        for c, _ in pairs(p.clients)  do
             local geom = {}
             geom.height = height
             geom.y = area["y"]
+            if c > 2 then
+                c.minimized = true
+                goto continue
+            end
             if focus == cls[c] then
                 geom.width = width * 0.5
                 if awful.util.magnifier then geom.width = geom.width * 1.3 end
@@ -54,6 +58,7 @@ function resizedmagnifier.arrange(p)
                 filled_space = filled_space + geom.width
             end
             p.geometries[cls[c]] = geom
+            ::continue::
         end
 
     end

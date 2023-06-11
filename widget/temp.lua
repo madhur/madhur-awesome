@@ -5,7 +5,6 @@ local timer  = require("gears.timer")
 local spawn  = require("awful.spawn")
 local wibox    = require("wibox")
 local tonumber = tonumber
-local naughty = require("naughty")
 
 local timer_table = {}
 local function newtimer(name, timeout, fun, nostart, stoppable)
@@ -29,20 +28,26 @@ local function factory(args)
     local temp     = { widget = args.widget or wibox.widget.textbox() }
     local timeout  = args.timeout or 5
     local settings = args.settings or function() end
+    local warn_count = 0
+    local crit_count = 0
 
     function temp.update()
-        spawn.easy_async_with_shell("sensors | grep Tccd1: | cut -c 16-19", function (stdout, stderr, reason, exit_code)
+        spawn.easy_async_with_shell("sensors | grep Tctl: | cut -c 16-19", function (stdout, stderr, reason, exit_code)
             -- naughty.notify({text=stderr})
             if stdout == nil then
                 return
             end
             result = stdout
             widget = temp.widget
-            if tonumber(result) > 70 then
+            if tonumber(result) > 90 then
+                crit_count  =  crit_count + 1
                 awesome.emit_signal("critical", "temp")
-            elseif tonumber(result) > 50 then
-               awesome.emit_signal("warning", "temp")            
+            elseif tonumber(result) > 60 then
+                warn_count = warn_count + 1
+                awesome.emit_signal("warning", "temp")            
             else
+                warn_count = 0
+                crit_count = 0
                 awesome.emit_signal("normal", "temp")            
             end
 
